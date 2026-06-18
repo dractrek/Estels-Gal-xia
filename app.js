@@ -317,18 +317,18 @@ function buildMilkyWayDust() {
       });
     }
   }
-  for (let i = 0; i < 5600; i++) {
+  for (let i = 0; i < 10500; i++) {
     const radius = Math.sqrt((i * 7919) % 10000 / 10000) * 15800;
     const theta = ((i * 104729) % 62831) / 10000;
-    const xgc = Math.cos(theta) * radius + pseudoNoise(i, 5, 3) * 360;
-    const ygc = Math.sin(theta) * radius + pseudoNoise(i, 7, 5) * 360;
-    const gz = pseudoNoise(i, 9, 7) * (130 + radius * 0.014);
+    const xgc = Math.cos(theta) * radius + pseudoNoise(i, 5, 3) * 430;
+    const ygc = Math.sin(theta) * radius + pseudoNoise(i, 7, 5) * 430;
+    const gz = pseudoNoise(i, 9, 7) * (160 + radius * 0.017);
     const p = galacticVectorToXYZ(xgc + GALACTIC_CENTER_DISTANCE_PC, ygc, gz);
     points.push({
       ...p,
       arm: "disc entre bracos",
       color: i % 11 === 0 ? "#ffd79f" : i % 7 === 0 ? "#cfe7ff" : "#dfe9f4",
-      alpha: 0.035 + ((i * 19) % 23) / 720,
+      alpha: 0.026 + ((i * 19) % 23) / 920,
       disk: true,
     });
   }
@@ -575,7 +575,7 @@ function drawMilkyWayDust(fade) {
     if (!p) continue;
     const bridgeBoost = star.bridge ? Math.max(0.4, 1 - Math.min(1, solarDistance / 4500)) : 1;
     const coreBoost = star.core ? 1.25 : 1;
-    const diskBoost = star.disk ? 0.62 : 1;
+    const diskBoost = star.disk ? 0.5 : 1;
     const size = star.core ? 1.55 : star.bridge ? 1.25 : star.disk ? 1 : p.depth > 9000 ? 1.15 : 1.45;
     ctx.globalAlpha = Math.min(0.98, (0.12 + star.alpha * 2.8) * fade * bridgeBoost * coreBoost * diskBoost);
     ctx.fillStyle = star.color;

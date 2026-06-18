@@ -8,9 +8,9 @@ const MIN_SPEED = 0.001;
 const MAX_SPEED = 500;
 const GALACTIC_CENTER_DISTANCE_PC = 8178;
 const LOCAL_FADE_START_PC = 120;
-const LOCAL_FADE_END_PC = 900;
-const GALAXY_FADE_START_PC = 180;
-const GALAXY_FADE_END_PC = 1600;
+const LOCAL_FADE_END_PC = 1250;
+const GALAXY_FADE_START_PC = 90;
+const GALAXY_FADE_END_PC = 950;
 const EQ_TO_GAL = [
   [-0.0548755604, -0.8734370902, -0.4838350155],
   [0.4941094279, -0.44482963, 0.7469822445],
@@ -331,6 +331,38 @@ function buildMilkyWayDust() {
       alpha: 0.06 + ((i * 19) % 23) / 460,
     });
   }
+  for (let i = 0; i < 2600; i++) {
+    const radius = 180 + Math.sqrt(((i * 3257) % 10000) / 10000) * 4200;
+    const theta = ((i * 8171) % 62831) / 10000;
+    const gx = Math.cos(theta) * radius + pseudoNoise(i, 13, 17) * 90;
+    const gy = Math.sin(theta) * radius + pseudoNoise(i, 17, 19) * 90;
+    const gz = pseudoNoise(i, 19, 23) * (35 + radius * 0.012);
+    const p = galacticVectorToXYZ(gx, gy, gz);
+    points.push({
+      ...p,
+      arm: "pont local",
+      color: i % 6 === 0 ? "#ffd39b" : i % 5 === 0 ? "#cfe7ff" : "#f1e6c7",
+      alpha: 0.1 + ((i * 29) % 31) / 210,
+      bridge: true,
+    });
+  }
+  for (let i = 0; i < 3600; i++) {
+    const core = Math.sqrt(((i * 5851) % 10000) / 10000);
+    const angle = ((i * 47431) % 62831) / 10000;
+    const radius = core * 2600;
+    const bar = pseudoNoise(i, 29, 31) * 0.35;
+    const xgc = Math.cos(angle) * radius * (1.35 + bar) + pseudoNoise(i, 23, 29) * 130;
+    const ygc = Math.sin(angle) * radius * (0.72 - bar * 0.2) + pseudoNoise(i, 31, 37) * 130;
+    const gz = pseudoNoise(i, 37, 41) * (120 + (1 - core) * 260);
+    const p = galacticVectorToXYZ(xgc + GALACTIC_CENTER_DISTANCE_PC, ygc, gz);
+    points.push({
+      ...p,
+      arm: "bulb central",
+      color: i % 7 === 0 ? "#fff0c8" : i % 4 === 0 ? "#ffd39b" : "#f2d8aa",
+      alpha: 0.18 + (1 - core) * 0.42 + ((i * 17) % 19) / 180,
+      core: true,
+    });
+  }
   return points;
 }
 
@@ -532,15 +564,17 @@ function drawGalaxyReferences() {
 function drawMilkyWayDust(fade) {
   if (fade <= 0) return;
   const solarDistance = distance(state.camera, { x: 0, y: 0, z: 0 });
-  const stride = solarDistance < 700 ? 5 : solarDistance < 2500 ? 3 : 1;
+  const stride = solarDistance < 550 ? 3 : solarDistance < 2200 ? 2 : 1;
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   for (let i = 0; i < galaxyDust.length; i += stride) {
     const star = galaxyDust[i];
     const p = project(star);
     if (!p) continue;
-    const size = p.depth > 9000 ? 1 : 1.15;
-    ctx.globalAlpha = Math.min(0.7, star.alpha * fade);
+    const bridgeBoost = star.bridge ? Math.max(0.4, 1 - Math.min(1, solarDistance / 4500)) : 1;
+    const coreBoost = star.core ? 1.25 : 1;
+    const size = star.core ? 1.55 : star.bridge ? 1.25 : p.depth > 9000 ? 1.15 : 1.45;
+    ctx.globalAlpha = Math.min(0.98, (0.12 + star.alpha * 2.8) * fade * bridgeBoost * coreBoost);
     ctx.fillStyle = star.color;
     ctx.fillRect(Math.round(p.x), Math.round(p.y), size, size);
   }

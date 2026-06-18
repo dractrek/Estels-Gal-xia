@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Atles Estel.lar</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div id="fileWarning" class="file-warning" role="alert">
+      <strong>Cataleg Gaia no carregat</strong>
+      <span>Obre aquesta app amb http://127.0.0.1:8777/; no amb el fitxer HTML directe.</span>
+    </div>
+    <canvas id="space" aria-label="Visualitzador 3D d'estels reals"></canvas>
+
+    <header class="topbar">
+      <div>
+        <h1>Atles Estel.lar</h1>
+        <p>Veinat solar real, coordenades i exoplanetes</p>
+      </div>
+      <div class="search">
+        <input id="searchInput" type="search" placeholder="Cerca: Proxima, Sirius, TRAPPIST-1..." autocomplete="off">
+        <button id="goButton" type="button">Anar-hi</button>
+      </div>
+    </header>
+
+    <aside class="panel panel-left">
+      <section>
+        <h2>Capes</h2>
+        <label><input id="layerSolar" type="checkbox" checked> Sistema Solar</label>
+        <label><input id="layerStars" type="checkbox" checked> Estels</label>
+        <label><input id="layerExoplanets" type="checkbox" checked> Sistemes amb exoplanetes</label>
+        <label><input id="layerGalaxy" type="checkbox" checked> Referencies galactiques</label>
+        <label><input id="animatePlanets" type="checkbox"> Orbites animades</label>
+      </section>
+
+      <section>
+        <h2>Moviment</h2>
+        <div class="control-grid">
+          <button id="speedDown" type="button">-</button>
+          <output id="speedReadout">1.0 pc/s</output>
+          <button id="speedUp" type="button">+</button>
+        </div>
+        <input id="speedSlider" class="speed-slider" type="range" min="-3" max="2.7" step="0.05" value="0">
+        <div class="speed-entry">
+          <label for="speedInput">pc/s</label>
+          <input id="speedInput" type="number" min="0.001" max="500" step="0.001" value="1">
+        </div>
+        <div id="speedAlt" class="microcopy">3.26 anys llum/s · 206265 UA/s</div>
+        <button id="stabilizeButton" class="wide-button" type="button">Estabilitzar nord</button>
+        <button id="approachButton" class="wide-button" type="button">Apropar seleccio</button>
+        <button id="resetButton" class="wide-button" type="button">Restablir vista</button>
+        <div class="microcopy">W/S avanca i retrocedeix, A/D desplaca lateralment, Q/E baixa i puja, Z/C fa roll, ratoli fa yaw/pitch. R restableix.</div>
+      </section>
+
+      <section>
+        <h2>Destins</h2>
+        <div id="quickTargets" class="chips"></div>
+      </section>
+    </aside>
+
+    <aside class="panel panel-right">
+      <section>
+        <h2>Coordenades</h2>
+        <dl class="coords">
+          <div><dt>X</dt><dd id="coordX">0.000 pc</dd></div>
+          <div><dt>Y</dt><dd id="coordY">0.000 pc</dd></div>
+          <div><dt>Z</dt><dd id="coordZ">0.000 pc</dd></div>
+          <div><dt>Dist. Sol</dt><dd id="coordDist">0.000 pc</dd></div>
+          <div><dt>Galactic l</dt><dd id="coordL">0.0 deg</dd></div>
+          <div><dt>Galactic b</dt><dd id="coordB">0.0 deg</dd></div>
+          <div><dt>Estels actius</dt><dd id="activeStars">0</dd></div>
+          <div><dt>Rajoles</dt><dd id="activeTiles">0</dd></div>
+        </dl>
+      </section>
+
+      <section>
+        <h2>Seleccio</h2>
+        <div id="selection" class="selection">Sol</div>
+      </section>
+
+      <section>
+        <h2>Cataleg</h2>
+        <div id="catalogStatus" class="selection">Carregant...</div>
+      </section>
+    </aside>
+
+    <div id="reticle" aria-hidden="true"></div>
+    <div id="hoverCard" class="hover-card" aria-hidden="true"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

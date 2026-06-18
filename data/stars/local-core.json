@@ -1,0 +1,27 @@
+{
+  "id": "local-core",
+  "label": "Veinat solar inicial",
+  "epoch": "J2016.0",
+  "source": "Mostra inicial preparada per al prototip; substituible per rajoles Gaia DR3",
+  "stars": [
+    { "name": "Proxima Centauri", "ra": 217.4292, "dec": -62.6795, "distancePc": 1.301, "spectral": "M5.5Ve", "mag": 11.13, "color": "#ff9d71", "note": "Estel mes proper al Sol; te planetes confirmats", "exoplanets": "Proxima b, Proxima d" },
+    { "name": "Alpha Centauri A", "ra": 219.9021, "dec": -60.8339, "distancePc": 1.338, "spectral": "G2V", "mag": -0.01, "color": "#fff1bd", "note": "Component principal del sistema Alpha Centauri" },
+    { "name": "Alpha Centauri B", "ra": 219.8961, "dec": -60.8375, "distancePc": 1.338, "spectral": "K1V", "mag": 1.33, "color": "#ffd69b", "note": "Company d'Alpha Centauri A" },
+    { "name": "Barnard's Star", "ra": 269.4521, "dec": 4.6934, "distancePc": 1.828, "spectral": "M4V", "mag": 9.54, "color": "#ff8f6b", "note": "Nan vermell proper amb moviment propi molt alt" },
+    { "name": "Luhman 16", "ra": 162.3125, "dec": -53.3183, "distancePc": 1.998, "spectral": "L/T dwarfs", "mag": 10.7, "color": "#d69b72", "note": "Sistema de nanes marrons proper" },
+    { "name": "Wolf 359", "ra": 164.12, "dec": 7.0147, "distancePc": 2.386, "spectral": "M6V", "mag": 13.54, "color": "#ff7f66", "note": "Nan vermell proper" },
+    { "name": "Lalande 21185", "ra": 165.83, "dec": 35.9699, "distancePc": 2.547, "spectral": "M2V", "mag": 7.47, "color": "#ffa070", "note": "Un dels estels mes propers visibles amb telescopi petit" },
+    { "name": "Sirius", "ra": 101.2872, "dec": -16.7161, "distancePc": 2.637, "spectral": "A1V", "mag": -1.46, "color": "#d7e9ff", "note": "Estel mes brillant del cel nocturn" },
+    { "name": "Ross 154", "ra": 280.6838, "dec": -23.8362, "distancePc": 2.97, "spectral": "M3.5V", "mag": 10.44, "color": "#ff9270", "note": "Nan vermell proper" },
+    { "name": "Epsilon Eridani", "ra": 53.2327, "dec": -9.4583, "distancePc": 3.22, "spectral": "K2V", "mag": 3.73, "color": "#ffd19a", "note": "Estel proper amb disc de deixalles", "exoplanets": "Epsilon Eridani b" },
+    { "name": "Ross 128", "ra": 176.9376, "dec": 0.7993, "distancePc": 3.37, "spectral": "M4V", "mag": 11.13, "color": "#ff8a6a", "note": "Sistema proper amb planeta temperat confirmat", "exoplanets": "Ross 128 b" },
+    { "name": "Procyon", "ra": 114.8255, "dec": 5.225, "distancePc": 3.51, "spectral": "F5IV-V", "mag": 0.34, "color": "#fff6df", "note": "Estel brillant proper" },
+    { "name": "Tau Ceti", "ra": 26.017, "dec": -15.9375, "distancePc": 3.65, "spectral": "G8V", "mag": 3.5, "color": "#ffe0a3", "note": "Estel semblant al Sol amb candidats planetaris", "exoplanets": "candidats planetaris" },
+    { "name": "Teegarden's Star", "ra": 43.253, "dec": 16.881, "distancePc": 3.83, "spectral": "M7V", "mag": 15.1, "color": "#ff755f", "note": "Nan vermell proper amb planetes confirmats", "exoplanets": "Teegarden b, c" },
+    { "name": "TRAPPIST-1", "ra": 346.6224, "dec": -5.0414, "distancePc": 12.43, "spectral": "M8V", "mag": 18.8, "color": "#ff715c", "note": "Sistema amb set planetes rocosos coneguts", "exoplanets": "TRAPPIST-1 b, c, d, e, f, g, h" },
+    { "name": "Vega", "ra": 279.2347, "dec": 38.7837, "distancePc": 7.68, "spectral": "A0V", "mag": 0.03, "color": "#dbeaff", "note": "Estel brillant de la constel.lacio de la Lira" },
+    { "name": "Arcturus", "ra": 213.9153, "dec": 19.1824, "distancePc": 11.26, "spectral": "K1.5III", "mag": -0.05, "color": "#ffc07d", "note": "Gegant taronja brillant" },
+    { "name": "Betelgeuse", "ra": 88.7929, "dec": 7.4071, "distancePc": 168, "spectral": "M1-2Ia", "mag": 0.5, "color": "#ff6f55", "note": "Supergegant vermella d'Orio" },
+    { "name": "Rigel", "ra": 78.6345, "dec": -8.2016, "distancePc": 264, "spectral": "B8Ia", "mag": 0.13, "color": "#cfe5ff", "note": "Supergegant blava d'Orio" }
+  ]
+}

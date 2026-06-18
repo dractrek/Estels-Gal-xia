@@ -1,0 +1,1 @@
+{"id":"cube_3_2_3","label":"Gaia DR3 cube 3_2_3","epoch":"J2016.0","source":"Gaia DR3 gaia_source; filtrat per paral.laxi fiable i magnitud G","stars":[{"name":"Gaia DR3 334743295716667264","sourceId":"334743295716667264","ra":37.5518272,"dec":38.9516467,"distancePc":99.26803,"spectral":"Gaia","mag":7.518,"color":"#e4f0ff","note":"Gaia DR3; distancia estimada amb paral.laxi"}]}

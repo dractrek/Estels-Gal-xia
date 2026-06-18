@@ -317,18 +317,19 @@ function buildMilkyWayDust() {
       });
     }
   }
-  for (let i = 0; i < 1700; i++) {
-    const radius = Math.sqrt((i * 7919) % 10000 / 10000) * 15500;
+  for (let i = 0; i < 5600; i++) {
+    const radius = Math.sqrt((i * 7919) % 10000 / 10000) * 15800;
     const theta = ((i * 104729) % 62831) / 10000;
-    const xgc = Math.cos(theta) * radius + pseudoNoise(i, 5, 3) * 280;
-    const ygc = Math.sin(theta) * radius + pseudoNoise(i, 7, 5) * 280;
-    const gz = pseudoNoise(i, 9, 7) * (90 + radius * 0.012);
+    const xgc = Math.cos(theta) * radius + pseudoNoise(i, 5, 3) * 360;
+    const ygc = Math.sin(theta) * radius + pseudoNoise(i, 7, 5) * 360;
+    const gz = pseudoNoise(i, 9, 7) * (130 + radius * 0.014);
     const p = galacticVectorToXYZ(xgc + GALACTIC_CENTER_DISTANCE_PC, ygc, gz);
     points.push({
       ...p,
-      arm: "disc galactic",
-      color: i % 5 === 0 ? "#ffd79f" : "#e5efff",
-      alpha: 0.06 + ((i * 19) % 23) / 460,
+      arm: "disc entre bracos",
+      color: i % 11 === 0 ? "#ffd79f" : i % 7 === 0 ? "#cfe7ff" : "#dfe9f4",
+      alpha: 0.035 + ((i * 19) % 23) / 720,
+      disk: true,
     });
   }
   for (let i = 0; i < 2600; i++) {
@@ -511,7 +512,7 @@ function draw() {
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
   const scale = scaleBlend();
   drawStarfield();
-  if (state.layers.galaxy) drawGalaxyReferences();
+  if (state.layers.galaxy) drawGalaxyReferences(scale.galaxy);
   if (state.layers.galaxy) drawMilkyWayDust(scale.galaxy);
   if (state.layers.galaxy) drawGalacticCoreGlow(scale.galaxy);
   if (state.layers.stars || state.layers.exoplanets) drawObjects(scale.local, scale.galaxy);
@@ -546,9 +547,9 @@ function drawStarfield() {
   ctx.restore();
 }
 
-function drawGalaxyReferences() {
+function drawGalaxyReferences(galaxyAlpha = 0) {
   ctx.save();
-  ctx.strokeStyle = "rgba(117, 214, 255, 0.24)";
+  ctx.strokeStyle = `rgba(117, 214, 255, ${0.24 - galaxyAlpha * 0.13})`;
   ctx.lineWidth = 1;
   for (let r = 50; r <= 300; r += 50) {
     drawGalacticCircle(r);
@@ -556,9 +557,9 @@ function drawGalaxyReferences() {
   for (let r = 1000; r <= 16000; r += 3000) {
     drawGalacticCircle(r);
   }
-  drawWorldLine(galacticToXYZ(0, 0, -260), galacticToXYZ(0, 0, 260), "rgba(255, 210, 125, 0.24)");
-  drawWorldLine(galacticToXYZ(90, 0, 260), galacticToXYZ(270, 0, 260), "rgba(148, 230, 184, 0.22)");
-  drawWorldLine(galacticToXYZ(0, -90, 120), galacticToXYZ(0, 90, 120), "rgba(117, 214, 255, 0.22)");
+  drawWorldLine(galacticToXYZ(0, 0, -260), galacticToXYZ(0, 0, 260), `rgba(255, 210, 125, ${0.24 - galaxyAlpha * 0.11})`);
+  drawWorldLine(galacticToXYZ(90, 0, 260), galacticToXYZ(270, 0, 260), `rgba(148, 230, 184, ${0.22 - galaxyAlpha * 0.1})`);
+  drawWorldLine(galacticToXYZ(0, -90, 120), galacticToXYZ(0, 90, 120), `rgba(117, 214, 255, ${0.22 - galaxyAlpha * 0.1})`);
   ctx.restore();
 }
 
@@ -574,8 +575,9 @@ function drawMilkyWayDust(fade) {
     if (!p) continue;
     const bridgeBoost = star.bridge ? Math.max(0.4, 1 - Math.min(1, solarDistance / 4500)) : 1;
     const coreBoost = star.core ? 1.25 : 1;
-    const size = star.core ? 1.55 : star.bridge ? 1.25 : p.depth > 9000 ? 1.15 : 1.45;
-    ctx.globalAlpha = Math.min(0.98, (0.12 + star.alpha * 2.8) * fade * bridgeBoost * coreBoost);
+    const diskBoost = star.disk ? 0.62 : 1;
+    const size = star.core ? 1.55 : star.bridge ? 1.25 : star.disk ? 1 : p.depth > 9000 ? 1.15 : 1.45;
+    ctx.globalAlpha = Math.min(0.98, (0.12 + star.alpha * 2.8) * fade * bridgeBoost * coreBoost * diskBoost);
     ctx.fillStyle = star.color;
     ctx.fillRect(Math.round(p.x), Math.round(p.y), size, size);
   }

@@ -7,6 +7,10 @@ const DEG = Math.PI / 180;
 const MIN_SPEED = 0.001;
 const MAX_SPEED = 500;
 const GALACTIC_CENTER_DISTANCE_PC = 8178;
+const LOCAL_FADE_START_PC = 120;
+const LOCAL_FADE_END_PC = 900;
+const GALAXY_FADE_START_PC = 180;
+const GALAXY_FADE_END_PC = 1600;
 const EQ_TO_GAL = [
   [-0.0548755604, -0.8734370902, -0.4838350155],
   [0.4941094279, -0.44482963, 0.7469822445],
@@ -473,13 +477,28 @@ function dot(a, b) {
 function draw() {
   ctx.fillStyle = "#03050a";
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+  const scale = scaleBlend();
   drawStarfield();
   if (state.layers.galaxy) drawGalaxyReferences();
-  if (state.layers.galaxy) drawMilkyWayDust();
-  if (state.layers.stars || state.layers.exoplanets) drawObjects();
+  if (state.layers.galaxy) drawMilkyWayDust(scale.galaxy);
+  if (state.layers.stars || state.layers.exoplanets) drawObjects(scale.local, scale.galaxy);
   if (state.layers.solar) drawSolarSystem();
   drawSelectionLine();
   updateHover();
+}
+
+function scaleBlend() {
+  const solarDistance = distance(state.camera, { x: 0, y: 0, z: 0 });
+  return {
+    distance: solarDistance,
+    local: 1 - smoothstep(LOCAL_FADE_START_PC, LOCAL_FADE_END_PC, solarDistance),
+    galaxy: smoothstep(GALAXY_FADE_START_PC, GALAXY_FADE_END_PC, solarDistance),
+  };
+}
+
+function smoothstep(edge0, edge1, value) {
+  const t = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
 }
 
 function drawStarfield() {
@@ -510,10 +529,9 @@ function drawGalaxyReferences() {
   ctx.restore();
 }
 
-function drawMilkyWayDust() {
-  const solarDistance = distance(state.camera, { x: 0, y: 0, z: 0 });
-  const fade = Math.max(0, Math.min(1, (solarDistance - 120) / 850));
+function drawMilkyWayDust(fade) {
   if (fade <= 0) return;
+  const solarDistance = distance(state.camera, { x: 0, y: 0, z: 0 });
   const stride = solarDistance < 700 ? 5 : solarDistance < 2500 ? 3 : 1;
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
@@ -574,21 +592,29 @@ function drawWorldLine(a, b, color) {
   ctx.stroke();
 }
 
-function drawObjects() {
+function drawObjects(localAlpha, galaxyAlpha) {
   const drawable = [];
   for (const obj of objects) {
     if (obj.type === "star" && !state.layers.stars && !exoplanetSystems.has(obj.name)) continue;
     if (obj.type === "star" && exoplanetSystems.has(obj.name) && !state.layers.exoplanets && !state.layers.stars) continue;
     if (obj.type === "galaxy" && !state.layers.galaxy) continue;
+    const alpha = objectScaleAlpha(obj, localAlpha, galaxyAlpha);
+    if (alpha <= 0.025) continue;
     const p = project(obj);
     if (!p) continue;
-    drawable.push({ obj, p });
+    drawable.push({ obj, p, alpha });
   }
   drawable.sort((a, b) => b.p.depth - a.p.depth);
-  for (const item of drawable) drawObject(item.obj, item.p);
+  for (const item of drawable) drawObject(item.obj, item.p, item.alpha);
 }
 
-function drawObject(obj, p) {
+function objectScaleAlpha(obj, localAlpha, galaxyAlpha) {
+  if (obj.type === "galaxy") return Math.max(0.4, galaxyAlpha);
+  if (obj.name === "Sol") return Math.max(localAlpha, galaxyAlpha * 0.9);
+  return localAlpha;
+}
+
+function drawObject(obj, p, alpha = 1) {
   const isExo = exoplanetSystems.has(obj.name);
   if (obj.type === "star" && isExo && !state.layers.exoplanets && !state.layers.stars) return;
   if (obj.type === "star" && !isExo && !state.layers.stars) return;
@@ -605,8 +631,9 @@ function drawObject(obj, p) {
   const size = obj.type === "galaxy" ? 7 : Math.max(0.55, Math.min(10, apparent + nearby + approach + selectedBoost + exoBoost));
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = alpha;
   if (isGaiaBulk && size < 0.9 && obj !== state.selected && !isExo) {
-    ctx.globalAlpha = Math.max(0.46, Math.min(0.9, 0.98 - (obj.mag || 10) * 0.032));
+    ctx.globalAlpha = alpha * Math.max(0.46, Math.min(0.9, 0.98 - (obj.mag || 10) * 0.032));
     ctx.fillStyle = drawColor;
     ctx.fillRect(Math.round(p.x), Math.round(p.y), 1, 1);
     ctx.restore();
@@ -626,6 +653,7 @@ function drawObject(obj, p) {
   ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
   ctx.fill();
   if (isExo) {
+    ctx.globalAlpha = alpha;
     ctx.strokeStyle = "rgba(148, 230, 184, 0.85)";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -633,7 +661,8 @@ function drawObject(obj, p) {
     ctx.stroke();
   }
   ctx.globalCompositeOperation = "source-over";
-  if (obj === state.selected || obj.type === "galaxy" || isExo || (obj.mag !== undefined && obj.mag < 1.5 && p.depth < 80)) {
+  ctx.globalAlpha = alpha;
+  if (obj.name === "Sol" || obj.type === "galaxy" || (alpha > 0.25 && (obj === state.selected || isExo || (obj.mag !== undefined && obj.mag < 1.5 && p.depth < 80)))) {
     ctx.fillStyle = obj === state.selected ? "#ffd27d" : "rgba(238, 245, 255, 0.82)";
     ctx.font = "12px Inter, system-ui, sans-serif";
     ctx.fillText(obj.name, p.x + 9, p.y - 7);
@@ -761,6 +790,7 @@ function resetView() {
 
 function updateHud() {
   const c = state.camera;
+  const scale = scaleBlend();
   document.getElementById("coordX").textContent = `${c.x.toFixed(3)} pc`;
   document.getElementById("coordY").textContent = `${c.y.toFixed(3)} pc`;
   document.getElementById("coordZ").textContent = `${c.z.toFixed(3)} pc`;
@@ -768,6 +798,7 @@ function updateHud() {
   const gal = xyzToGalactic(c);
   document.getElementById("coordL").textContent = `${gal.l.toFixed(1)} deg`;
   document.getElementById("coordB").textContent = `${gal.b.toFixed(1)} deg`;
+  document.getElementById("scaleMode").textContent = scaleModeLabel(scale);
   document.getElementById("speedReadout").textContent = `${formatSpeed(state.speed)} pc/s`;
   document.getElementById("speedInput").value = formatSpeed(state.speed);
   document.getElementById("speedSlider").value = Math.log10(state.speed).toFixed(3);
@@ -776,6 +807,12 @@ function updateHud() {
   document.getElementById("activeTiles").textContent = `${state.catalog.loadedTiles.size || 1}`;
   const far = distance(c, { x: 0, y: 0, z: 0 }) > 120 ? ` + guia Via Lactia ${galaxyDust.length}` : "";
   document.getElementById("catalogStatus").textContent = `${state.catalog.status}${far}`;
+}
+
+function scaleModeLabel(scale) {
+  if (scale.local > 0.7) return "Gaia local";
+  if (scale.galaxy > 0.8) return "Via Lactia";
+  return "Transicio";
 }
 
 function setSpeed(value) {

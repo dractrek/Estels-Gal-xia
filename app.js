@@ -6,6 +6,7 @@ const LY_PER_PC = 3.26156;
 const DEG = Math.PI / 180;
 const MIN_SPEED = 0.001;
 const MAX_SPEED = 500;
+const GALACTIC_CENTER_DISTANCE_PC = 8178;
 const EQ_TO_GAL = [
   [-0.0548755604, -0.8734370902, -0.4838350155],
   [0.4941094279, -0.44482963, 0.7469822445],
@@ -45,6 +46,8 @@ const state = {
     farGuideDistancePc: 160,
   },
 };
+
+const galaxyDust = buildMilkyWayDust();
 
 const nearbyStars = [
   star("Sol", 0, 0, 0, "G2V", -26.74, "#fff4c2", "Estel del Sistema Solar"),
@@ -102,7 +105,7 @@ const planets = [
   planet("Neptu", 30.05, "#789dff"),
 ];
 
-const quickTargets = ["Sol", "Proxima Centauri", "Sirius", "TRAPPIST-1", "Tau Ceti", "Vega", "Centre galactic"];
+const quickTargets = ["Sol", "Proxima Centauri", "Sirius", "TRAPPIST-1", "Tau Ceti", "Vega", "Centre galactic", "Vista Via Lactia"];
 
 const galaxyMarkers = [
   { name: "Centre galactic", ...galacticToXYZ(0, 0, 8178), color: "#ffcf70", note: "Direccio aproximada a Sagittarius A*" },
@@ -276,11 +279,60 @@ function galacticToXYZ(lDeg, bDeg, d) {
   const gx = Math.cos(b) * Math.cos(l) * d;
   const gy = Math.cos(b) * Math.sin(l) * d;
   const gz = Math.sin(b) * d;
+  return galacticVectorToXYZ(gx, gy, gz);
+}
+
+function galacticVectorToXYZ(gx, gy, gz) {
   return {
     x: EQ_TO_GAL[0][0] * gx + EQ_TO_GAL[1][0] * gy + EQ_TO_GAL[2][0] * gz,
     y: EQ_TO_GAL[0][1] * gx + EQ_TO_GAL[1][1] * gy + EQ_TO_GAL[2][1] * gz,
     z: EQ_TO_GAL[0][2] * gx + EQ_TO_GAL[1][2] * gy + EQ_TO_GAL[2][2] * gz,
   };
+}
+
+function buildMilkyWayDust() {
+  const points = [];
+  const armNames = ["Perseu", "Sagittarius-Carina", "Scutum-Centaurus", "Norma-Exterior"];
+  const armColors = ["#dcecff", "#fff0bd", "#ffd39b", "#cfe7ff"];
+  for (let arm = 0; arm < armNames.length; arm++) {
+    const offset = (arm / armNames.length) * Math.PI * 2;
+    for (let i = 0; i < 1350; i++) {
+      const t = i / 1349;
+      const radius = 2100 + t * 13500;
+      const theta = offset + t * 4.7 + Math.sin(t * 8 + arm) * 0.08;
+      const scatter = 130 + radius * 0.018;
+      const xgc = Math.cos(theta) * radius + pseudoNoise(i, arm, 11) * scatter;
+      const ygc = Math.sin(theta) * radius + pseudoNoise(i, arm, 23) * scatter;
+      const gz = pseudoNoise(i, arm, 37) * (60 + radius * 0.009);
+      const p = galacticVectorToXYZ(xgc + GALACTIC_CENTER_DISTANCE_PC, ygc, gz);
+      points.push({
+        ...p,
+        arm: armNames[arm],
+        color: armColors[(i + arm) % armColors.length],
+        alpha: 0.12 + (1 - t) * 0.18 + ((i * 13) % 17) / 180,
+      });
+    }
+  }
+  for (let i = 0; i < 1700; i++) {
+    const radius = Math.sqrt((i * 7919) % 10000 / 10000) * 15500;
+    const theta = ((i * 104729) % 62831) / 10000;
+    const xgc = Math.cos(theta) * radius + pseudoNoise(i, 5, 3) * 280;
+    const ygc = Math.sin(theta) * radius + pseudoNoise(i, 7, 5) * 280;
+    const gz = pseudoNoise(i, 9, 7) * (90 + radius * 0.012);
+    const p = galacticVectorToXYZ(xgc + GALACTIC_CENTER_DISTANCE_PC, ygc, gz);
+    points.push({
+      ...p,
+      arm: "disc galactic",
+      color: i % 5 === 0 ? "#ffd79f" : "#e5efff",
+      alpha: 0.06 + ((i * 19) % 23) / 460,
+    });
+  }
+  return points;
+}
+
+function pseudoNoise(i, a, salt) {
+  const value = Math.sin((i + 1) * 12.9898 + (a + 1) * 78.233 + salt * 37.719) * 43758.5453;
+  return (value - Math.floor(value)) * 2 - 1;
 }
 
 function resize() {
@@ -423,6 +475,7 @@ function draw() {
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
   drawStarfield();
   if (state.layers.galaxy) drawGalaxyReferences();
+  if (state.layers.galaxy) drawMilkyWayDust();
   if (state.layers.stars || state.layers.exoplanets) drawObjects();
   if (state.layers.solar) drawSolarSystem();
   drawSelectionLine();
@@ -448,9 +501,31 @@ function drawGalaxyReferences() {
   for (let r = 50; r <= 300; r += 50) {
     drawGalacticCircle(r);
   }
+  for (let r = 1000; r <= 16000; r += 3000) {
+    drawGalacticCircle(r);
+  }
   drawWorldLine(galacticToXYZ(0, 0, -260), galacticToXYZ(0, 0, 260), "rgba(255, 210, 125, 0.24)");
   drawWorldLine(galacticToXYZ(90, 0, 260), galacticToXYZ(270, 0, 260), "rgba(148, 230, 184, 0.22)");
   drawWorldLine(galacticToXYZ(0, -90, 120), galacticToXYZ(0, 90, 120), "rgba(117, 214, 255, 0.22)");
+  ctx.restore();
+}
+
+function drawMilkyWayDust() {
+  const solarDistance = distance(state.camera, { x: 0, y: 0, z: 0 });
+  const fade = Math.max(0, Math.min(1, (solarDistance - 120) / 850));
+  if (fade <= 0) return;
+  const stride = solarDistance < 700 ? 5 : solarDistance < 2500 ? 3 : 1;
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < galaxyDust.length; i += stride) {
+    const star = galaxyDust[i];
+    const p = project(star);
+    if (!p) continue;
+    const size = p.depth > 9000 ? 1 : 1.15;
+    ctx.globalAlpha = Math.min(0.7, star.alpha * fade);
+    ctx.fillStyle = star.color;
+    ctx.fillRect(Math.round(p.x), Math.round(p.y), size, size);
+  }
   ctx.restore();
 }
 
@@ -616,6 +691,10 @@ function distance(a, b) {
 function jumpTo(name) {
   const lower = name.trim().toLowerCase();
   if (!lower) return;
+  if (lower.includes("vista via lactia") || lower.includes("milky way")) {
+    jumpToMilkyWayView();
+    return;
+  }
   const found = objects.find((o) => o.name.toLowerCase() === lower) ||
     objects.find((o) => o.name.toLowerCase().includes(lower));
   if (!found) {
@@ -631,6 +710,20 @@ function jumpTo(name) {
   state.pitch = -0.12;
   state.roll = 0;
   state.speed = found.name === "Sol" ? 0.004 : Math.max(0.004, Math.min(1, d * 0.7));
+  updateSelection();
+}
+
+function jumpToMilkyWayView() {
+  const center = objects.find((obj) => obj.name === "Centre galactic") || galacticToXYZ(0, 0, GALACTIC_CENTER_DISTANCE_PC);
+  const camera = galacticVectorToXYZ(GALACTIC_CENTER_DISTANCE_PC, 0, 23500);
+  state.camera.x = camera.x;
+  state.camera.y = camera.y;
+  state.camera.z = camera.z;
+  state.selected = center;
+  state.fov = 82 * DEG;
+  state.speed = 420;
+  lookAt(center);
+  state.roll = 0;
   updateSelection();
 }
 
@@ -681,7 +774,8 @@ function updateHud() {
   document.getElementById("speedAlt").textContent = `${formatSpeed(state.speed * LY_PER_PC)} anys llum/s · ${formatSpeed(state.speed / AU_IN_PC)} UA/s`;
   document.getElementById("activeStars").textContent = `${objects.filter((obj) => obj.type === "star").length}`;
   document.getElementById("activeTiles").textContent = `${state.catalog.loadedTiles.size || 1}`;
-  document.getElementById("catalogStatus").textContent = state.catalog.status;
+  const far = distance(c, { x: 0, y: 0, z: 0 }) > 120 ? ` + guia Via Lactia ${galaxyDust.length}` : "";
+  document.getElementById("catalogStatus").textContent = `${state.catalog.status}${far}`;
 }
 
 function setSpeed(value) {

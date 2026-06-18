@@ -513,6 +513,7 @@ function draw() {
   drawStarfield();
   if (state.layers.galaxy) drawGalaxyReferences();
   if (state.layers.galaxy) drawMilkyWayDust(scale.galaxy);
+  if (state.layers.galaxy) drawGalacticCoreGlow(scale.galaxy);
   if (state.layers.stars || state.layers.exoplanets) drawObjects(scale.local, scale.galaxy);
   if (state.layers.solar) drawSolarSystem();
   drawSelectionLine();
@@ -581,6 +582,28 @@ function drawMilkyWayDust(fade) {
   ctx.restore();
 }
 
+function drawGalacticCoreGlow(fade) {
+  if (fade <= 0.05) return;
+  const center = objects.find((obj) => obj.name === "Centre galactic");
+  if (!center) return;
+  const p = project(center);
+  if (!p) return;
+  const distanceToCenter = distance(state.camera, center);
+  const radius = Math.max(18, Math.min(78, 520000 / Math.max(1, distanceToCenter)));
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = 0.55 * fade;
+  const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
+  glow.addColorStop(0, "rgba(255, 232, 166, 0.9)");
+  glow.addColorStop(0.34, "rgba(255, 195, 106, 0.34)");
+  glow.addColorStop(1, "rgba(255, 160, 70, 0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawGalacticCircle(radius) {
   let started = false;
   ctx.beginPath();
@@ -643,7 +666,8 @@ function drawObjects(localAlpha, galaxyAlpha) {
 }
 
 function objectScaleAlpha(obj, localAlpha, galaxyAlpha) {
-  if (obj.type === "galaxy") return Math.max(0.4, galaxyAlpha);
+  if (obj.type === "galaxy" && obj.name !== "Centre galactic") return Math.max(0.12, 0.42 - galaxyAlpha * 0.26);
+  if (obj.type === "galaxy") return Math.max(0.5, galaxyAlpha);
   if (obj.name === "Sol") return Math.max(localAlpha, galaxyAlpha * 0.9);
   return localAlpha;
 }
@@ -662,7 +686,9 @@ function drawObject(obj, p, alpha = 1) {
   const approach = obj.type === "star" ? Math.max(0, 1 - cameraDistance / 0.28) * 7 : 0;
   const selectedBoost = obj === state.selected ? 1.8 : 0;
   const exoBoost = isExo ? 0.28 : 0;
-  const size = obj.type === "galaxy" ? 7 : Math.max(0.55, Math.min(10, apparent + nearby + approach + selectedBoost + exoBoost));
+  const size = obj.type === "galaxy"
+    ? obj.name === "Centre galactic" ? 7 : 3.6
+    : Math.max(0.55, Math.min(10, apparent + nearby + approach + selectedBoost + exoBoost));
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   ctx.globalAlpha = alpha;
@@ -696,7 +722,7 @@ function drawObject(obj, p, alpha = 1) {
   }
   ctx.globalCompositeOperation = "source-over";
   ctx.globalAlpha = alpha;
-  if (obj.name === "Sol" || obj.type === "galaxy" || (alpha > 0.25 && (obj === state.selected || isExo || (obj.mag !== undefined && obj.mag < 1.5 && p.depth < 80)))) {
+  if (obj.name === "Sol" || obj.name === "Centre galactic" || (alpha > 0.25 && (obj === state.selected || isExo || (obj.mag !== undefined && obj.mag < 1.5 && p.depth < 80)))) {
     ctx.fillStyle = obj === state.selected ? "#ffd27d" : "rgba(238, 245, 255, 0.82)";
     ctx.font = "12px Inter, system-ui, sans-serif";
     ctx.fillText(obj.name, p.x + 9, p.y - 7);

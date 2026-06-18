@@ -347,20 +347,20 @@ function buildMilkyWayDust() {
       bridge: true,
     });
   }
-  for (let i = 0; i < 3600; i++) {
+  for (let i = 0; i < 5200; i++) {
     const core = Math.sqrt(((i * 5851) % 10000) / 10000);
     const angle = ((i * 47431) % 62831) / 10000;
-    const radius = core * 2600;
-    const bar = pseudoNoise(i, 29, 31) * 0.35;
-    const xgc = Math.cos(angle) * radius * (1.35 + bar) + pseudoNoise(i, 23, 29) * 130;
-    const ygc = Math.sin(angle) * radius * (0.72 - bar * 0.2) + pseudoNoise(i, 31, 37) * 130;
-    const gz = pseudoNoise(i, 37, 41) * (120 + (1 - core) * 260);
+    const radius = core * 3300;
+    const bar = pseudoNoise(i, 29, 31) * 0.3;
+    const xgc = Math.cos(angle) * radius * (1.55 + bar) + pseudoNoise(i, 23, 29) * 190;
+    const ygc = Math.sin(angle) * radius * (0.82 - bar * 0.18) + pseudoNoise(i, 31, 37) * 190;
+    const gz = pseudoNoise(i, 37, 41) * (160 + (1 - core) * 330);
     const p = galacticVectorToXYZ(xgc + GALACTIC_CENTER_DISTANCE_PC, ygc, gz);
     points.push({
       ...p,
       arm: "bulb central",
       color: i % 7 === 0 ? "#fff0c8" : i % 4 === 0 ? "#ffd39b" : "#f2d8aa",
-      alpha: 0.18 + (1 - core) * 0.42 + ((i * 17) % 19) / 180,
+      alpha: 0.095 + (1 - core) * 0.24 + ((i * 17) % 19) / 260,
       core: true,
     });
   }
@@ -574,9 +574,9 @@ function drawMilkyWayDust(fade) {
     const p = project(star);
     if (!p) continue;
     const bridgeBoost = star.bridge ? Math.max(0.4, 1 - Math.min(1, solarDistance / 4500)) : 1;
-    const coreBoost = star.core ? 1.25 : 1;
+    const coreBoost = star.core ? 0.68 : 1;
     const diskBoost = star.disk ? 0.5 : 1;
-    const size = star.core ? 1.55 : star.bridge ? 1.25 : star.disk ? 1 : p.depth > 9000 ? 1.15 : 1.45;
+    const size = star.core ? 1.18 : star.bridge ? 1.25 : star.disk ? 1 : p.depth > 9000 ? 1.15 : 1.45;
     ctx.globalAlpha = Math.min(0.98, (0.12 + star.alpha * 2.8) * fade * bridgeBoost * coreBoost * diskBoost);
     ctx.fillStyle = star.color;
     ctx.fillRect(Math.round(p.x), Math.round(p.y), size, size);
@@ -594,7 +594,7 @@ function drawGalacticCoreGlow(fade) {
   const radius = Math.max(18, Math.min(78, 520000 / Math.max(1, distanceToCenter)));
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
-  ctx.globalAlpha = 0.55 * fade;
+  ctx.globalAlpha = 0.38 * fade;
   const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
   glow.addColorStop(0, "rgba(255, 232, 166, 0.9)");
   glow.addColorStop(0.34, "rgba(255, 195, 106, 0.34)");

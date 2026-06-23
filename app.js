@@ -835,8 +835,7 @@ function jumpTo(name) {
     jumpToMilkyWayView();
     return;
   }
-  const found = objects.find((o) => o.name.toLowerCase() === lower) ||
-    objects.find((o) => o.name.toLowerCase().includes(lower));
+  const found = findObjectByName(lower);
   if (!found) {
     setSelectionHtml(`<strong>No trobat</strong><span>Prova amb Proxima, Sirius, TRAPPIST-1, Tau Ceti o Centre galactic.</span>`);
     return;
@@ -851,6 +850,13 @@ function jumpTo(name) {
   state.roll = 0;
   state.speed = found.name === "Sol" ? 0.004 : Math.max(0.004, Math.min(1, d * 0.7));
   updateSelection();
+}
+
+function findObjectByName(query) {
+  const lower = query.trim().toLowerCase();
+  if (!lower) return null;
+  return objects.find((o) => o.name.toLowerCase() === lower) ||
+    objects.find((o) => o.name.toLowerCase().includes(lower));
 }
 
 function jumpToMilkyWayView() {
@@ -899,11 +905,21 @@ function resetView() {
   updateSelection();
 }
 
-function markMeasurement(slot, obj = state.selected) {
+function markMeasurement(slot, obj = measurementCandidate()) {
   if (!obj || obj.type !== "star") return;
+  state.selected = obj;
   state.measure[slot] = obj;
   state.measure.nextSlot = slot === "a" ? "b" : "a";
+  updateSelection();
   updateMeasurement();
+}
+
+function measurementCandidate() {
+  const typed = document.getElementById("searchInput")?.value || "";
+  const fromSearch = findObjectByName(typed);
+  if (fromSearch && fromSearch.type === "star") return fromSearch;
+  if (state.selected && state.selected.type === "star") return state.selected;
+  return null;
 }
 
 function clearMeasurement() {

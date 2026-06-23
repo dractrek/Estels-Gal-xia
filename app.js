@@ -34,8 +34,10 @@ const state = {
   animatePlanets: false,
   keys: new Set(),
   dragging: false,
+  pointerMoved: false,
   lastMouse: { x: 0, y: 0 },
   hover: { x: 0, y: 0, obj: null },
+  measure: { a: null, b: null, clickMode: false, nextSlot: "a" },
   catalog: {
     tileSizePc: 20,
     activeRadiusTiles: 1,
@@ -517,6 +519,7 @@ function draw() {
   if (state.layers.galaxy) drawGalacticCoreGlow(scale.galaxy);
   if (state.layers.stars || state.layers.exoplanets) drawObjects(scale.local, scale.galaxy);
   if (state.layers.solar) drawSolarSystem();
+  drawMeasurementLine();
   drawSelectionLine();
   updateHover();
 }
@@ -686,7 +689,8 @@ function drawObject(obj, p, alpha = 1) {
     : Math.max(0.45, Math.min(1.35, 1.18 - (obj.mag || 7) * 0.055));
   const nearby = obj.distancePc !== undefined && obj.distancePc < 4 ? (isGaiaBulk ? 0.08 : 0.22) : 0;
   const approach = obj.type === "star" ? Math.max(0, 1 - cameraDistance / 0.28) * 7 : 0;
-  const selectedBoost = obj === state.selected ? 1.8 : 0;
+  const isMeasured = obj === state.measure.a || obj === state.measure.b;
+  const selectedBoost = obj === state.selected ? 1.8 : isMeasured ? 1.2 : 0;
   const exoBoost = isExo ? 0.28 : 0;
   const size = obj.type === "galaxy"
     ? obj.name === "Centre galactic" ? 7 : 3.6
@@ -720,6 +724,14 @@ function drawObject(obj, p, alpha = 1) {
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(p.x, p.y, size + 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  if (isMeasured) {
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = obj === state.measure.a ? "rgba(255, 210, 125, 0.95)" : "rgba(117, 214, 255, 0.95)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, size + 7, 0, Math.PI * 2);
     ctx.stroke();
   }
   ctx.globalCompositeOperation = "source-over";
@@ -775,8 +787,45 @@ function drawSelectionLine() {
   ctx.restore();
 }
 
+function drawMeasurementLine() {
+  const a = state.measure.a;
+  const b = state.measure.b;
+  if (!a || !b) return;
+  const pa = project(a);
+  const pb = project(b);
+  if (!pa || !pb) return;
+  const d = distance(a, b);
+  ctx.save();
+  ctx.strokeStyle = "rgba(255, 210, 125, 0.68)";
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.moveTo(pa.x, pa.y);
+  ctx.lineTo(pb.x, pb.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "rgba(255, 210, 125, 0.92)";
+  ctx.font = "12px Inter, system-ui, sans-serif";
+  ctx.fillText("A", pa.x + 8, pa.y + 12);
+  ctx.fillStyle = "rgba(117, 214, 255, 0.92)";
+  ctx.fillText("B", pb.x + 8, pb.y + 12);
+  const midX = (pa.x + pb.x) / 2;
+  const midY = (pa.y + pb.y) / 2;
+  ctx.fillStyle = "rgba(238, 245, 255, 0.86)";
+  ctx.fillText(`${formatDistance(d)} pc / ${formatDistance(d * LY_PER_PC)} anys llum`, midX + 8, midY - 8);
+  ctx.restore();
+}
+
 function distance(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+function formatDistance(value) {
+  if (value >= 1000) return value.toFixed(0);
+  if (value >= 100) return value.toFixed(1);
+  if (value >= 10) return value.toFixed(2);
+  if (value >= 1) return value.toFixed(3);
+  return value.toExponential(2);
 }
 
 function jumpTo(name) {
@@ -850,6 +899,30 @@ function resetView() {
   updateSelection();
 }
 
+function markMeasurement(slot, obj = state.selected) {
+  if (!obj || obj.type !== "star") return;
+  state.measure[slot] = obj;
+  state.measure.nextSlot = slot === "a" ? "b" : "a";
+  updateMeasurement();
+}
+
+function clearMeasurement() {
+  state.measure.a = null;
+  state.measure.b = null;
+  state.measure.nextSlot = "a";
+  updateMeasurement();
+}
+
+function toggleMeasureClickMode() {
+  state.measure.clickMode = !state.measure.clickMode;
+  updateMeasurement();
+}
+
+function handleMeasureClick() {
+  if (!state.measure.clickMode || !state.hover.obj || state.hover.obj.type !== "star") return;
+  markMeasurement(state.measure.nextSlot, state.hover.obj);
+}
+
 function updateHud() {
   const c = state.camera;
   const scale = scaleBlend();
@@ -869,6 +942,7 @@ function updateHud() {
   document.getElementById("activeTiles").textContent = `${state.catalog.loadedTiles.size || 1}`;
   const far = distance(c, { x: 0, y: 0, z: 0 }) > 120 ? ` + guia Via Lactia ${galaxyDust.length}` : "";
   document.getElementById("catalogStatus").textContent = `${state.catalog.status}${far}`;
+  updateMeasurement();
 }
 
 function scaleModeLabel(scale) {
@@ -924,6 +998,34 @@ function updateSelection() {
 
 function setSelectionHtml(html) {
   document.getElementById("selection").innerHTML = html;
+}
+
+function updateMeasurement() {
+  const a = state.measure.a;
+  const b = state.measure.b;
+  const button = document.getElementById("measureClickButton");
+  if (button) button.classList.toggle("active", state.measure.clickMode);
+  const panel = document.getElementById("measurement");
+  if (!panel) return;
+  if (!a && !b) {
+    panel.innerHTML = state.measure.clickMode
+      ? `<span>Clica un estel per marcar A.</span>`
+      : `<span>Tria dos estels per mesurar la distancia.</span>`;
+    return;
+  }
+  const lines = [
+    `<span>A: ${a ? a.name : "pendent"}</span>`,
+    `<span>B: ${b ? b.name : "pendent"}</span>`,
+  ];
+  if (a && b) {
+    const d = distance(a, b);
+    lines.unshift(`<strong>${formatDistance(d)} pc</strong>`);
+    lines.push(`<span>${formatDistance(d * LY_PER_PC)} anys llum</span>`);
+    lines.push(`<span>${formatDistance(d / AU_IN_PC)} UA</span>`);
+  } else if (state.measure.clickMode) {
+    lines.push(`<span>Clica un estel per marcar ${state.measure.nextSlot.toUpperCase()}.</span>`);
+  }
+  panel.innerHTML = lines.join("");
 }
 
 function updateHover() {
@@ -988,6 +1090,10 @@ function setupUi() {
   document.getElementById("stabilizeButton").addEventListener("click", stabilizeNorthUp);
   document.getElementById("approachButton").addEventListener("click", approachSelection);
   document.getElementById("resetButton").addEventListener("click", resetView);
+  document.getElementById("measureAButton").addEventListener("click", () => markMeasurement("a"));
+  document.getElementById("measureBButton").addEventListener("click", () => markMeasurement("b"));
+  document.getElementById("measureClickButton").addEventListener("click", toggleMeasureClickMode);
+  document.getElementById("measureClearButton").addEventListener("click", clearMeasurement);
   for (const [id, layer] of [
     ["layerSolar", "solar"],
     ["layerStars", "stars"],
@@ -1020,6 +1126,7 @@ window.addEventListener("keydown", (event) => {
 window.addEventListener("keyup", (event) => state.keys.delete(event.key.toLowerCase()));
 canvas.addEventListener("pointerdown", (event) => {
   state.dragging = true;
+  state.pointerMoved = false;
   state.lastMouse.x = event.clientX;
   state.lastMouse.y = event.clientY;
   canvas.setPointerCapture(event.pointerId);
@@ -1033,10 +1140,14 @@ canvas.addEventListener("pointermove", (event) => {
   if (!state.dragging) return;
   const dx = event.clientX - state.lastMouse.x;
   const dy = event.clientY - state.lastMouse.y;
+  if (Math.hypot(dx, dy) > 3) state.pointerMoved = true;
   state.lastMouse.x = event.clientX;
   state.lastMouse.y = event.clientY;
   state.yaw -= dx * 0.004;
   state.pitch = normalizeAngle(state.pitch - dy * 0.003);
+});
+canvas.addEventListener("click", () => {
+  if (!state.pointerMoved) handleMeasureClick();
 });
 canvas.addEventListener("wheel", (event) => {
   event.preventDefault();
@@ -1056,6 +1167,7 @@ function frame(now) {
 resize();
 setupUi();
 updateSelection();
+updateMeasurement();
 updateHud();
 loadCatalogManifest();
 requestAnimationFrame(frame);

@@ -251,6 +251,23 @@ input[type="checkbox"] {
   font-size: 12px;
 }
 
+.measure-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.measure-actions button {
+  padding: 8px 9px;
+  font-size: 12px;
+}
+
+.measure-actions button.active {
+  border-color: rgba(255, 210, 125, 0.8);
+  color: var(--gold);
+}
+
 .coords {
   display: grid;
   gap: 8px;

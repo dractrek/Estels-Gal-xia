@@ -1239,6 +1239,11 @@ function setupUi() {
   document.getElementById("searchInput").addEventListener("keydown", (event) => {
     if (event.key === "Enter") jumpTo(event.currentTarget.value);
   });
+  document.getElementById("helpButton").addEventListener("click", openHelp);
+  document.getElementById("helpCloseButton").addEventListener("click", closeHelp);
+  document.getElementById("helpModal").addEventListener("click", (event) => {
+    if (event.target.id === "helpModal") closeHelp();
+  });
   document.getElementById("speedDown").addEventListener("click", () => {
     setSpeed(state.speed / 1.6);
   });
@@ -1289,8 +1294,21 @@ function setupUi() {
   targetGoButton.addEventListener("click", () => jumpTo(targetSelect.value));
 }
 
+function openHelp() {
+  const modal = document.getElementById("helpModal");
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+}
+
+function closeHelp() {
+  const modal = document.getElementById("helpModal");
+  modal.classList.remove("open");
+  modal.setAttribute("aria-hidden", "true");
+}
+
 window.addEventListener("resize", resize);
 window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeHelp();
   const key = event.key.toLowerCase();
   if (key === "r") resetView();
   state.keys.add(key);

@@ -21,6 +21,7 @@
       <div class="search">
         <input id="searchInput" type="search" placeholder="Cerca: Proxima, Sirius, TRAPPIST-1..." autocomplete="off">
         <button id="goButton" type="button">Anar-hi</button>
+        <button id="helpButton" type="button">Ajuda</button>
       </div>
     </header>
 
@@ -113,6 +114,32 @@
 
     <div id="reticle" aria-hidden="true"></div>
     <div id="hoverCard" class="hover-card" aria-hidden="true"></div>
+    <div id="helpModal" class="modal-backdrop" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+        <div class="modal-head">
+          <h2 id="helpTitle">Ajuda rapida</h2>
+          <button id="helpCloseButton" type="button" aria-label="Tanca ajuda">Tanca</button>
+        </div>
+        <div class="help-grid">
+          <section>
+            <h3>Navegacio espai</h3>
+            <p>W/S avanca i retrocedeix. A/D desplaca lateralment. Q/E baixa i puja. Z/C gira la nau. El ratoli orienta la mirada.</p>
+          </section>
+          <section>
+            <h3>Cel des del Sol</h3>
+            <p>El boto Cel des del Sol posa la camera al Sol. W/S i A/D giren la mirada; tria qualsevol desti o Restablir vista per tornar a navegar.</p>
+          </section>
+          <section>
+            <h3>Destins i capes</h3>
+            <p>El desplegable Destins salta a estels, referencies i vistes. Les capes permeten apagar estels, exoplanetes, constel.lacions o la guia de la Via Lactia.</p>
+          </section>
+          <section>
+            <h3>Mesura</h3>
+            <p>Clic A/B alterna dos estels i mostra la distancia real entre ells. Marca A i Marca B usen l'estel seleccionat o el text del cercador.</p>
+          </section>
+        </div>
+      </div>
+    </div>
     <script src="app.js"></script>
   </body>
 </html>

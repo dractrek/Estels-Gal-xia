@@ -38,7 +38,7 @@ const state = {
   lastMouse: { x: 0, y: 0 },
   hover: { x: 0, y: 0, obj: null },
   measure: { a: null, b: null, clickMode: false, nextSlot: "a" },
-  labels: { mode: "more" },
+  labels: { mode: "more", visibleStars: 0, effectiveMode: "more" },
   catalog: {
     tileSizePc: 20,
     activeRadiusTiles: 1,
@@ -667,8 +667,15 @@ function drawObjects(localAlpha, galaxyAlpha) {
     if (!p) continue;
     drawable.push({ obj, p, alpha });
   }
+  state.labels.visibleStars = drawable.filter((item) => item.obj.type === "star").length;
+  state.labels.effectiveMode = effectiveLabelMode();
   drawable.sort((a, b) => b.p.depth - a.p.depth);
   for (const item of drawable) drawObject(item.obj, item.p, item.alpha);
+}
+
+function effectiveLabelMode() {
+  if (state.labels.mode !== "many") return state.labels.mode;
+  return state.labels.visibleStars <= 220 ? "many" : "more";
 }
 
 function objectScaleAlpha(obj, localAlpha, galaxyAlpha) {
@@ -751,10 +758,11 @@ function shouldDrawLabel(obj, p, alpha, isExo, isMeasured) {
   if (obj === state.selected || isMeasured) return true;
   if (obj.type === "galaxy") return true;
   if (obj.spectral === "Gaia" && !isExo) return false;
-  if (state.labels.mode === "essential") {
+  const labelMode = state.labels.effectiveMode;
+  if (labelMode === "essential") {
     return isExo || (obj.mag !== undefined && obj.mag < 1.5 && p.depth < 80);
   }
-  if (state.labels.mode === "more") {
+  if (labelMode === "more") {
     return isExo ||
       (obj.mag !== undefined && obj.mag < 4.8 && p.depth < 180) ||
       (obj.distancePc !== undefined && obj.distancePc < 8 && p.depth < 160);
@@ -978,7 +986,18 @@ function updateHud() {
   document.getElementById("activeTiles").textContent = `${state.catalog.loadedTiles.size || 1}`;
   const far = distance(c, { x: 0, y: 0, z: 0 }) > 120 ? ` + guia Via Lactia ${galaxyDust.length}` : "";
   document.getElementById("catalogStatus").textContent = `${state.catalog.status}${far}`;
+  updateLabelStatus();
   updateMeasurement();
+}
+
+function updateLabelStatus() {
+  const labelStatus = document.getElementById("labelStatus");
+  if (!labelStatus) return;
+  const modeNames = { essential: "Essencials", more: "Mes", many: "Molts" };
+  const base = `Noms: ${modeNames[state.labels.mode] || state.labels.mode}`;
+  labelStatus.textContent = state.labels.mode === "many" && state.labels.effectiveMode !== "many"
+    ? `${base} (limitat: ${state.labels.visibleStars} en pantalla)`
+    : base;
 }
 
 function scaleModeLabel(scale) {

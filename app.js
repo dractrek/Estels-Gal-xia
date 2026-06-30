@@ -30,7 +30,9 @@ const state = {
     stars: true,
     exoplanets: true,
     galaxy: true,
+    constellations: true,
   },
+  viewMode: "space",
   animatePlanets: false,
   keys: new Set(),
   dragging: false,
@@ -88,6 +90,25 @@ const nearbyStars = [
   star("Betelgeuse", 88.7929, 7.4071, 168, "M1-2Ia", 0.50, "#ff6f55", "Supergegant vermella d'Orio"),
   star("Rigel", 78.6345, -8.2016, 264, "B8Ia", 0.13, "#cfe5ff", "Supergegant blava d'Orio"),
   star("Polaris", 37.9546, 89.2641, 132, "F7Ib", 1.98, "#fff0cf", "Estel polar actual"),
+  star("Bellatrix", 81.2828, 6.3497, 77, "B2III", 1.64, "#d7e9ff", "Espatlla d'Orio"),
+  star("Saiph", 86.9391, -9.6696, 200, "B0.5Ia", 2.06, "#cfe5ff", "Peu d'Orio"),
+  star("Alnitak", 85.1897, -1.9426, 387, "O9.5Iab", 1.74, "#c8e1ff", "Cinturo d'Orio"),
+  star("Alnilam", 84.0534, -1.2019, 606, "B0Ia", 1.69, "#cfe5ff", "Cinturo d'Orio"),
+  star("Mintaka", 83.0017, -0.2991, 380, "O9.5II", 2.23, "#d7e9ff", "Cinturo d'Orio"),
+  star("Deneb", 310.3579, 45.2803, 802, "A2Ia", 1.25, "#e1edff", "Vertex del Triangle d'estiu"),
+  star("Altair", 297.6958, 8.8683, 5.13, "A7V", 0.77, "#e8f2ff", "Vertex del Triangle d'estiu"),
+  star("Caph", 2.2945, 59.1498, 16.8, "F2III", 2.27, "#fff0cf", "Estel de Cassiopea"),
+  star("Schedar", 10.1268, 56.5373, 70, "K0III", 2.24, "#ffd095", "Estel de Cassiopea"),
+  star("Navi", 14.1771, 60.7167, 168, "B0IV", 2.15, "#d7e9ff", "Gamma Cassiopeiae"),
+  star("Ruchbah", 21.4541, 60.2353, 30, "A5V", 2.68, "#e8f2ff", "Estel de Cassiopea"),
+  star("Segin", 28.5987, 63.6701, 132, "B3III", 3.35, "#d7e9ff", "Estel de Cassiopea"),
+  star("Dubhe", 165.9320, 61.7510, 37.7, "K0III", 1.79, "#ffd095", "Estel del Carro Major"),
+  star("Merak", 165.4603, 56.3824, 24.5, "A1V", 2.37, "#e1edff", "Estel del Carro Major"),
+  star("Phecda", 178.4577, 53.6948, 25.6, "A0V", 2.44, "#e1edff", "Estel del Carro Major"),
+  star("Megrez", 183.8565, 57.0326, 24.7, "A3V", 3.31, "#e8f2ff", "Estel del Carro Major"),
+  star("Alioth", 193.5073, 55.9598, 25.3, "A1III", 1.76, "#e1edff", "Estel del Carro Major"),
+  star("Mizar", 200.9814, 54.9254, 25.1, "A2V", 2.23, "#e8f2ff", "Estel del Carro Major"),
+  star("Alkaid", 206.8852, 49.3133, 31.0, "B3V", 1.85, "#d7e9ff", "Estel del Carro Major"),
 ];
 
 const exoplanetSystems = new Map([
@@ -112,7 +133,14 @@ const planets = [
   planet("Neptu", 30.05, "#789dff"),
 ];
 
-const quickTargets = ["Sol", "Proxima Centauri", "Sirius", "TRAPPIST-1", "Tau Ceti", "Vega", "Centre galactic", "Vista Via Lactia"];
+const quickTargets = ["Sol", "Cel des del Sol", "Proxima Centauri", "Sirius", "TRAPPIST-1", "Tau Ceti", "Vega", "Centre galactic", "Vista Via Lactia"];
+
+const constellationLines = [
+  { name: "Orio", pairs: [["Betelgeuse", "Bellatrix"], ["Bellatrix", "Mintaka"], ["Mintaka", "Alnilam"], ["Alnilam", "Alnitak"], ["Alnitak", "Saiph"], ["Saiph", "Rigel"], ["Rigel", "Mintaka"], ["Betelgeuse", "Alnitak"]] },
+  { name: "Triangle d'estiu", pairs: [["Vega", "Deneb"], ["Deneb", "Altair"], ["Altair", "Vega"]] },
+  { name: "Cassiopea", pairs: [["Caph", "Schedar"], ["Schedar", "Navi"], ["Navi", "Ruchbah"], ["Ruchbah", "Segin"]] },
+  { name: "Carro Major", pairs: [["Dubhe", "Merak"], ["Merak", "Phecda"], ["Phecda", "Megrez"], ["Megrez", "Dubhe"], ["Megrez", "Alioth"], ["Alioth", "Mizar"], ["Mizar", "Alkaid"]] },
+];
 
 const galaxyMarkers = [
   { name: "Centre galactic", ...galacticToXYZ(0, 0, 8178), color: "#ffcf70", note: "Direccio aproximada a Sagittarius A*" },
@@ -445,6 +473,19 @@ function stabilizeNorthUp() {
 }
 
 function update(dt) {
+  if (state.viewMode === "sky") {
+    state.camera.x = 0;
+    state.camera.y = 0;
+    state.camera.z = 0;
+    if (state.keys.has("a")) state.yaw = normalizeAngle(state.yaw + dt * 0.75);
+    if (state.keys.has("d")) state.yaw = normalizeAngle(state.yaw - dt * 0.75);
+    if (state.keys.has("w") || state.keys.has("arrowup")) state.pitch = Math.min(Math.PI / 2 - 0.02, state.pitch + dt * 0.55);
+    if (state.keys.has("s") || state.keys.has("arrowdown")) state.pitch = Math.max(-Math.PI / 2 + 0.02, state.pitch - dt * 0.55);
+    if (state.keys.has("c")) state.roll = normalizeAngle(state.roll + dt * 1.4);
+    if (state.keys.has("z")) state.roll = normalizeAngle(state.roll - dt * 1.4);
+    updateTileWindow();
+    return;
+  }
   const basis = cameraBasis();
   const c = state.camera;
   const step = state.speed * dt;
@@ -518,6 +559,7 @@ function draw() {
   if (state.layers.galaxy) drawGalaxyReferences(scale.galaxy);
   if (state.layers.galaxy) drawMilkyWayDust(scale.galaxy);
   if (state.layers.galaxy) drawGalacticCoreGlow(scale.galaxy);
+  if (state.layers.constellations) drawConstellations();
   if (state.layers.stars || state.layers.exoplanets) drawObjects(scale.local, scale.galaxy);
   if (state.layers.solar) drawSolarSystem();
   drawMeasurementLine();
@@ -653,6 +695,35 @@ function drawWorldLine(a, b, color) {
   ctx.moveTo(pa.x, pa.y);
   ctx.lineTo(pb.x, pb.y);
   ctx.stroke();
+}
+
+function drawConstellations() {
+  if (distance(state.camera, { x: 0, y: 0, z: 0 }) > 2.5) return;
+  ctx.save();
+  ctx.strokeStyle = "rgba(117, 214, 255, 0.36)";
+  ctx.fillStyle = "rgba(117, 214, 255, 0.76)";
+  ctx.lineWidth = 1;
+  ctx.font = "12px Inter, system-ui, sans-serif";
+  for (const constellation of constellationLines) {
+    let labelPoint = null;
+    let visibleSegments = 0;
+    ctx.beginPath();
+    for (const [from, to] of constellation.pairs) {
+      const a = findObjectByName(from);
+      const b = findObjectByName(to);
+      if (!a || !b) continue;
+      const pa = project(a);
+      const pb = project(b);
+      if (!pa || !pb) continue;
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+      labelPoint = labelPoint || { x: (pa.x + pb.x) / 2, y: (pa.y + pb.y) / 2 };
+      visibleSegments++;
+    }
+    ctx.stroke();
+    if (labelPoint && visibleSegments >= 2) ctx.fillText(constellation.name, labelPoint.x + 10, labelPoint.y - 10);
+  }
+  ctx.restore();
 }
 
 function drawObjects(localAlpha, galaxyAlpha) {
@@ -859,6 +930,10 @@ function formatDistance(value) {
 function jumpTo(name) {
   const lower = name.trim().toLowerCase();
   if (!lower) return;
+  if (lower.includes("cel des del sol") || lower.includes("sky from sol")) {
+    jumpToSolarSkyView();
+    return;
+  }
   if (lower.includes("vista via lactia") || lower.includes("milky way")) {
     jumpToMilkyWayView();
     return;
@@ -869,6 +944,7 @@ function jumpTo(name) {
     return;
   }
   state.selected = found;
+  state.viewMode = "space";
   const d = approachDistance(found);
   state.camera.x = found.x;
   state.camera.y = found.y - d;
@@ -880,6 +956,23 @@ function jumpTo(name) {
   updateSelection();
 }
 
+function jumpToSolarSkyView() {
+  state.viewMode = "sky";
+  state.camera.x = 0;
+  state.camera.y = 0;
+  state.camera.z = 0;
+  state.selected = objects.find((obj) => obj.name === "Sol") || state.selected;
+  state.yaw = 1.45;
+  state.pitch = 0.1;
+  state.roll = 0;
+  state.fov = 96 * DEG;
+  state.speed = 0.004;
+  state.labels.mode = "many";
+  const labelMode = document.getElementById("labelMode");
+  if (labelMode) labelMode.value = "many";
+  updateSelection();
+}
+
 function findObjectByName(query) {
   const lower = query.trim().toLowerCase();
   if (!lower) return null;
@@ -888,6 +981,7 @@ function findObjectByName(query) {
 }
 
 function jumpToMilkyWayView() {
+  state.viewMode = "space";
   const center = objects.find((obj) => obj.name === "Centre galactic") || galacticToXYZ(0, 0, GALACTIC_CENTER_DISTANCE_PC);
   const camera = galacticVectorToXYZ(GALACTIC_CENTER_DISTANCE_PC, 0, 23500);
   state.camera.x = camera.x;
@@ -910,6 +1004,7 @@ function approachDistance(obj) {
 
 function approachSelection() {
   if (!state.selected) return;
+  state.viewMode = "space";
   const d = Math.max(0.006, approachDistance(state.selected) * 0.35);
   state.camera.x = state.selected.x;
   state.camera.y = state.selected.y - d;
@@ -921,6 +1016,7 @@ function approachSelection() {
 }
 
 function resetView() {
+  state.viewMode = "space";
   state.camera.x = 0;
   state.camera.y = -7.5;
   state.camera.z = 2.2;
@@ -1001,6 +1097,7 @@ function updateLabelStatus() {
 }
 
 function scaleModeLabel(scale) {
+  if (state.viewMode === "sky") return "Cel des del Sol";
   if (scale.local > 0.7) return "Gaia local";
   if (scale.galaxy > 0.8) return "Via Lactia";
   return "Transicio";
@@ -1143,6 +1240,7 @@ function setupUi() {
     setSpeed(event.currentTarget.value);
   });
   document.getElementById("stabilizeButton").addEventListener("click", stabilizeNorthUp);
+  document.getElementById("skyViewButton").addEventListener("click", jumpToSolarSkyView);
   document.getElementById("approachButton").addEventListener("click", approachSelection);
   document.getElementById("resetButton").addEventListener("click", resetView);
   document.getElementById("measureAButton").addEventListener("click", () => markMeasurement("a"));
@@ -1154,6 +1252,7 @@ function setupUi() {
     ["layerStars", "stars"],
     ["layerExoplanets", "exoplanets"],
     ["layerGalaxy", "galaxy"],
+    ["layerConstellations", "constellations"],
   ]) {
     document.getElementById(id).addEventListener("change", (event) => {
       state.layers[layer] = event.currentTarget.checked;

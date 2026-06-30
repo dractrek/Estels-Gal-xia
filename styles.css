@@ -67,7 +67,8 @@ canvas {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -226,6 +227,28 @@ input[type="checkbox"] {
   background: var(--panel-strong);
   color: var(--text);
   font-variant-numeric: tabular-nums;
+}
+
+.select-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.select-row label {
+  min-height: auto;
+  color: var(--muted);
+}
+
+.select-row select {
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  color: var(--text);
 }
 
 .wide-button {

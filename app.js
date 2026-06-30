@@ -38,6 +38,7 @@ const state = {
   lastMouse: { x: 0, y: 0 },
   hover: { x: 0, y: 0, obj: null },
   measure: { a: null, b: null, clickMode: false, nextSlot: "a" },
+  labels: { mode: "more" },
   catalog: {
     tileSizePc: 20,
     activeRadiusTiles: 1,
@@ -736,12 +737,31 @@ function drawObject(obj, p, alpha = 1) {
   }
   ctx.globalCompositeOperation = "source-over";
   ctx.globalAlpha = alpha;
-  if (obj.name === "Sol" || obj.name === "Centre galactic" || (alpha > 0.25 && (obj === state.selected || isExo || (obj.mag !== undefined && obj.mag < 1.5 && p.depth < 80)))) {
+  if (shouldDrawLabel(obj, p, alpha, isExo, isMeasured)) {
     ctx.fillStyle = obj === state.selected ? "#ffd27d" : "rgba(238, 245, 255, 0.82)";
     ctx.font = "12px Inter, system-ui, sans-serif";
     ctx.fillText(obj.name, p.x + 9, p.y - 7);
   }
   ctx.restore();
+}
+
+function shouldDrawLabel(obj, p, alpha, isExo, isMeasured) {
+  if (alpha <= 0.18) return false;
+  if (obj.name === "Sol" || obj.name === "Centre galactic") return true;
+  if (obj === state.selected || isMeasured) return true;
+  if (obj.type === "galaxy") return true;
+  if (obj.spectral === "Gaia" && !isExo) return false;
+  if (state.labels.mode === "essential") {
+    return isExo || (obj.mag !== undefined && obj.mag < 1.5 && p.depth < 80);
+  }
+  if (state.labels.mode === "more") {
+    return isExo ||
+      (obj.mag !== undefined && obj.mag < 4.8 && p.depth < 180) ||
+      (obj.distancePc !== undefined && obj.distancePc < 8 && p.depth < 160);
+  }
+  return isExo ||
+    obj.spectral !== "Gaia" ||
+    (obj.mag !== undefined && obj.mag < 5.5 && p.depth < 120);
 }
 
 function drawSolarSystem() {
@@ -1122,6 +1142,9 @@ function setupUi() {
   }
   document.getElementById("animatePlanets").addEventListener("change", (event) => {
     state.animatePlanets = event.currentTarget.checked;
+  });
+  document.getElementById("labelMode").addEventListener("change", (event) => {
+    state.labels.mode = event.currentTarget.value;
   });
   const quick = document.getElementById("quickTargets");
   for (const target of quickTargets) {

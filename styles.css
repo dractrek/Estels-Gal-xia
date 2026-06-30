@@ -263,14 +263,24 @@ input[type="checkbox"] {
   line-height: 1.45;
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+.destination-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
 }
 
-.chips button {
+.destination-row select {
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  color: var(--text);
+}
+
+.destination-row button {
   padding: 8px 10px;
+  white-space: nowrap;
   font-size: 12px;
 }
 

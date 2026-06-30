@@ -133,7 +133,7 @@ const planets = [
   planet("Neptu", 30.05, "#789dff"),
 ];
 
-const quickTargets = ["Sol", "Cel des del Sol", "Proxima Centauri", "Sirius", "TRAPPIST-1", "Tau Ceti", "Vega", "Centre galactic", "Vista Via Lactia"];
+const specialDestinations = ["Cel des del Sol", "Vista Via Lactia"];
 
 const constellationLines = [
   { name: "Orio", pairs: [["Betelgeuse", "Bellatrix"], ["Bellatrix", "Mintaka"], ["Mintaka", "Alnilam"], ["Alnilam", "Alnitak"], ["Alnitak", "Saiph"], ["Saiph", "Rigel"], ["Rigel", "Mintaka"], ["Betelgeuse", "Alnitak"]] },
@@ -421,7 +421,10 @@ function forwardVector() {
 function cameraBasis() {
   const forward = forwardVector();
   const baseRight = { x: Math.cos(state.yaw), y: -Math.sin(state.yaw), z: 0 };
-  const baseUp = cross(baseRight, forward);
+  let baseUp = cross(baseRight, forward);
+  if (Math.hypot(baseUp.x, baseUp.y, baseUp.z) < 0.0001) {
+    baseUp = { x: 0, y: 0, z: state.pitch >= 0 ? 1 : -1 };
+  }
   const cosR = Math.cos(state.roll);
   const sinR = Math.sin(state.roll);
   return {
@@ -452,6 +455,15 @@ function normalize(v) {
   return { x: v.x / length, y: v.y / length, z: v.z / length };
 }
 
+function destinationNames() {
+  const names = new Set(specialDestinations);
+  for (const obj of objects) {
+    if (obj.type === "star" && obj.spectral === "Gaia" && !exoplanetSystems.has(obj.name)) continue;
+    if (obj.type === "star" || obj.type === "galaxy") names.add(obj.name);
+  }
+  return [...names].sort((a, b) => a.localeCompare(b, "ca", { sensitivity: "base" }));
+}
+
 function normalizeAngle(angle) {
   let result = angle % (Math.PI * 2);
   if (result <= -Math.PI) result += Math.PI * 2;
@@ -479,8 +491,8 @@ function update(dt) {
     state.camera.z = 0;
     if (state.keys.has("a")) state.yaw = normalizeAngle(state.yaw + dt * 0.75);
     if (state.keys.has("d")) state.yaw = normalizeAngle(state.yaw - dt * 0.75);
-    if (state.keys.has("w") || state.keys.has("arrowup")) state.pitch = Math.min(Math.PI / 2 - 0.02, state.pitch + dt * 0.55);
-    if (state.keys.has("s") || state.keys.has("arrowdown")) state.pitch = Math.max(-Math.PI / 2 + 0.02, state.pitch - dt * 0.55);
+    if (state.keys.has("w") || state.keys.has("arrowup")) state.pitch = normalizeAngle(state.pitch + dt * 0.55);
+    if (state.keys.has("s") || state.keys.has("arrowdown")) state.pitch = normalizeAngle(state.pitch - dt * 0.55);
     if (state.keys.has("c")) state.roll = normalizeAngle(state.roll + dt * 1.4);
     if (state.keys.has("z")) state.roll = normalizeAngle(state.roll - dt * 1.4);
     updateTileWindow();
@@ -1264,14 +1276,17 @@ function setupUi() {
   document.getElementById("labelMode").addEventListener("change", (event) => {
     state.labels.mode = event.currentTarget.value;
   });
-  const quick = document.getElementById("quickTargets");
-  for (const target of quickTargets) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = target;
-    button.addEventListener("click", () => jumpTo(target));
-    quick.appendChild(button);
+  const targetSelect = document.getElementById("targetSelect");
+  const targetGoButton = document.getElementById("targetGoButton");
+  for (const target of destinationNames()) {
+    const option = document.createElement("option");
+    option.value = target;
+    option.textContent = target;
+    targetSelect.appendChild(option);
   }
+  targetSelect.value = "Sol";
+  targetSelect.addEventListener("change", () => jumpTo(targetSelect.value));
+  targetGoButton.addEventListener("click", () => jumpTo(targetSelect.value));
 }
 
 window.addEventListener("resize", resize);
